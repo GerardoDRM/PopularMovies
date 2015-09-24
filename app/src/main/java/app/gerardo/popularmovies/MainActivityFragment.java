@@ -51,20 +51,10 @@ public class MainActivityFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-        String[] moviesArray = {
-                "Movie",
-                "Movie",
-                "Movie",
-                "Movie",
-                "Movie",
-                "Movie",
-                "Movie",
-                "Movie"
-        };
 
-        List<String> movieList = new ArrayList<String>(Arrays.asList(moviesArray));
 
-        adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, movieList);
+        adapter = new ArrayAdapter<String>(getActivity(), R.layout.grid_item_movies,
+                R.id.text, new ArrayList<String>());
 
         // Get reference of gridview
         GridView mGrid = (GridView) rootView.findViewById(R.id.gridview_movies);
@@ -74,13 +64,23 @@ public class MainActivityFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 String movie = adapter.getItem(position);
-                Intent i = new Intent(getActivity(),DetailsMovieActivity.class)
+                Intent i = new Intent(getActivity(), DetailsMovieActivity.class)
                         .putExtra(Intent.EXTRA_TEXT, movie);
                 startActivity(i);
             }
         });
-        new FetchPopularMoviesTask().execute();
+
         return rootView;
+    }
+
+    private void updateMovies() {
+        new FetchPopularMoviesTask().execute();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateMovies();
     }
 
     @Override
