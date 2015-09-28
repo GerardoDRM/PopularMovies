@@ -6,7 +6,6 @@ import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 
 /**
@@ -18,44 +17,28 @@ public class MovieProvider extends ContentProvider {
     private static final UriMatcher sUriMatcher = buildUriMatcher();
     private MovieDBHelper mOpenHelper;
 
+    // Ids for uir matcher
     static final int MOVIE = 100;
-    static final int WEATHER_WITH_LOCATION = 101;
-
-    private static final SQLiteQueryBuilder sWeatherByLocationSettingQueryBuilder = null;
+    static final int MOVIE_WITH_ID = 101;
 
 
-    private Cursor getWeatherByLocationSetting(Uri uri, String[] projection, String sortOrder) {
-
-        return sWeatherByLocationSettingQueryBuilder.query(mOpenHelper.getReadableDatabase(),
-                null, // Columns
-                null, // Selection
-                null, // Selection Args
-                null, // Group by
-                null, // having
-                sortOrder // order by
-        );
-    }
-
-    /*
-       Students: Here is where you need to create the UriMatcher. This UriMatcher will
-       match each URI to the WEATHER, WEATHER_WITH_LOCATION, WEATHER_WITH_LOCATION_AND_DATE,
-       and LOCATION integer constants defined above.  You can test this by uncommenting the
-       testUriMatcher test within TestUriMatcher.
-    */
     static UriMatcher buildUriMatcher() {
-        // 1) The code passed into the constructor represents the code to return for the root
-        // URI.  It's common to use NO_MATCH as the code for this case. Add the constructor below.
+
         final UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH);
         final String authority = MoviesContract.CONTENT_AUTHORITY;
-
-        // 2) Use the addURI function to match each of the types.  Use the constants from
-        // WeatherContract to help define the types to the UriMatcher.
-        // For each type of URI you want to add, create a corresponding code.
+        // Use the addURI function to match each of the types.
         matcher.addURI(authority, MoviesContract.PATH_MOVIE, MOVIE);
-
-        // 3) Return the new matcher!
+        matcher.addURI(authority, MoviesContract.PATH_MOVIE + "/*", MOVIE_WITH_ID);
+        // Return the new matcher!
         return matcher;
     }
+
+    //movie_id = ?
+    private static final String sMovieId =
+            MoviesContract.MovieEntry.TABLE_NAME+
+                    "." + MoviesContract.MovieEntry._ID + " = ? ";
+
+
 
 
     @Override
@@ -64,12 +47,21 @@ public class MovieProvider extends ContentProvider {
         return true;
     }
 
+    /**
+     * This method allows to return all data in Movie table and also
+     * A single cursor
+     * @param uri
+     * @param projection
+     * @param selection
+     * @param selectionArgs
+     * @param sortOrder
+     * @return
+     */
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         Cursor retCursor;
-        switch (sUriMatcher.match(uri)) {
-            // "movie"
-            case MOVIE: {
+        final int match = sUriMatcher.match(uri);
+            if(match == MOVIE) {
                 retCursor = mOpenHelper.getReadableDatabase().query(
                         MoviesContract.MovieEntry.TABLE_NAME,
                         projection,
@@ -78,11 +70,26 @@ public class MovieProvider extends ContentProvider {
                         null,
                         null,
                         sortOrder);
-                break;
             }
-            default:
+            else if(match == MOVIE_WITH_ID) {
+                String movieId = MoviesContract.MovieEntry.getMovieId(uri);
+                String[] selectionArgs1;
+                String selection1;
+                selection1 = sMovieId;
+                selectionArgs1 = new String[]{movieId};
+
+                retCursor = mOpenHelper.getReadableDatabase().query(
+                        MoviesContract.MovieEntry.TABLE_NAME,
+                        projection,
+                        selection1,
+                        selectionArgs1,
+                        null,
+                        null,
+                        sortOrder);
+            }
+            else{
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
-        }
+            }
         if (retCursor != null) {
             retCursor.setNotificationUri(getContext().getContentResolver(), uri);
         }
@@ -94,11 +101,20 @@ public class MovieProvider extends ContentProvider {
         // Use the Uri Matcher to determine what kind of URI this is.
         final int match = sUriMatcher.match(uri);
 
+        // content://app.gerardo.popoularmovies/movie
         if(match == MOVIE) return MoviesContract.MovieEntry.CONTENT_TYPE;
+        // content://app.gerardo.popoularmovies/movie/1
+        else if(match == MOVIE_WITH_ID) return MoviesContract.MovieEntry.CONTENT_TYPE;
         else throw new UnsupportedOperationException("Unknown uri: " + uri);
 
     }
 
+    /**
+     *  This method just insert a single value
+     * @param uri
+     * @param values
+     * @return
+     */
     @Override
     public Uri insert(Uri uri, ContentValues values) {
         final SQLiteDatabase db = mOpenHelper.getWritableDatabase();
@@ -119,39 +135,44 @@ public class MovieProvider extends ContentProvider {
         return returnUri;
     }
 
+    /**
+     *  This method delete all data on Movie table
+     * @param uri
+     * @param selection
+     * @param selectionArgs
+     * @return
+     */
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
-        // Student: Start by getting a writable database
         final SQLiteDatabase db = mOpenHelper.getWritableDatabase();
         final int match = sUriMatcher.match(uri);
         int rowsDeleted;
-        // Student: Use the uriMatcher to match the WEATHER and LOCATION URI's we are going to
-        // handle.  If it doesn't match these, throw an UnsupportedOperationException.
         if ( null == selection ) selection = "1";
-        switch (match) {
-            case MOVIE:
-                rowsDeleted = db.delete(
-                        MoviesContract.MovieEntry.TABLE_NAME, selection, selectionArgs);
-                break;
-            default:
-                throw new UnsupportedOperationException("Unknown uri: " + uri);
+        if(match == MOVIE) {
+            rowsDeleted = db.delete(
+                    MoviesContract.MovieEntry.TABLE_NAME, selection, selectionArgs);
         }
-        // Student: A null value deletes all rows.  In my implementation of this, I only notified
-        // the uri listeners (using the content resolver) if the rowsDeleted != 0 or the selection
-        // is null.
-        // Oh, and you should notify the listeners here.
-        // Because a null deletes all rows
+        else {
+            throw new UnsupportedOperationException("Unknown uri: " + uri);
+        }
+        // Notify listener
         if (rowsDeleted != 0) {
             getContext().getContentResolver().notifyChange(uri, null);
         }
-        // Student: return the actual rows deleted
+        // Return rows deleted
         return rowsDeleted;
     }
 
+    /**
+     * If data on database needs to be updated
+     * @param uri
+     * @param values
+     * @param selection
+     * @param selectionArgs
+     * @return
+     */
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
-        // Student: This is a lot like the delete function.  We return the number of rows impacted
-        // by the update.
         final SQLiteDatabase db = mOpenHelper.getWritableDatabase();
         final int match = sUriMatcher.match(uri);
         int rowsUpdated;
@@ -168,6 +189,13 @@ public class MovieProvider extends ContentProvider {
         return rowsUpdated;
     }
 
+    /**
+     *  BulkInsert is better when we try to
+     *  insert too much data
+     * @param uri
+     * @param values
+     * @return
+     */
     @Override
     public int bulkInsert(Uri uri, ContentValues[] values) {
         final SQLiteDatabase db = mOpenHelper.getWritableDatabase();
@@ -194,9 +222,7 @@ public class MovieProvider extends ContentProvider {
         }
     }
 
-    // You do not need to call this method. This is a method specifically to assist the testing
-    // framework in running smoothly. You can read more at:
-    // http://developer.android.com/reference/android/content/ContentProvider.html#shutdown()
+    // Method to assist testing
     @Override
     @TargetApi(11)
     public void shutdown() {

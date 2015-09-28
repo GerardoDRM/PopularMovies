@@ -1,11 +1,17 @@
 <resources>
     <string name="app_name">PopularMovies</string>
-    <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_details_movie">DetailsMovieActivity</string>
     <string name="action_share">Share</string>
-    <!-- SyncAdapter related -->
+    <!-- Content Provider related -->
     <string name="sync_account_type">sunshine.example.com</string>
     <string name="content_authority">app.gerardo.popularmovies</string>
+
+    <string name="release_date">Release Date</string>
+    <string name="popularity_label">Popularity</string>
+    <string name="vote_label">Votes</string>
+    <string name="overview_label">Overview</string>
+    <string name="high_rate">High rate</string>
+
 
 </resources>

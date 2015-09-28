@@ -24,33 +24,19 @@ import java.util.HashSet;
 
 public class TestDb extends AndroidTestCase {
 
-    public static final String LOG_TAG = TestDb.class.getSimpleName();
-
-    // Since we want each test to start with a clean slate
+    // Delete all data
     void deleteTheDatabase() {
         mContext.deleteDatabase(MovieDBHelper.DATABASE_NAME);
     }
 
-    /*
-        This function gets called before each test is executed to delete the database.  This makes
-        sure that we always have a clean test.
-     */
+    // Clean test
     public void setUp() {
         deleteTheDatabase();
     }
 
-    /*
-        Students: Uncomment this test once you've written the code to create the Location
-        table.  Note that you will have to have chosen the same column names that I did in
-        my solution for this test to compile, so if you haven't yet done that, this is
-        a good time to change your column names to match mine.
-        Note that this only tests that the Location table has the correct columns, since we
-        give you the code for the weather table.  This test does not look at the
-     */
+    // Testing movie DB
     public void testCreateDb() throws Throwable {
-        // build a HashSet of all of the table names we wish to look for
-        // Note that there will be another table in the DB that stores the
-        // Android metadata (db version information)
+
         final HashSet<String> tableNameHashSet = new HashSet<String>();
         tableNameHashSet.add(MoviesContract.MovieEntry.TABLE_NAME);
 
@@ -70,69 +56,46 @@ public class TestDb extends AndroidTestCase {
             tableNameHashSet.remove(c.getString(0));
         } while( c.moveToNext() );
 
-        // if this fails, it means that your database doesn't contain both the location entry
-        // and weather entry tables
-        assertTrue("Error: Your database was created without both the location entry and weather entry tables",
+        // if this fails, it means that your database doesn't contain movie table
+        assertTrue("Error: Your database was created without table",
                 tableNameHashSet.isEmpty());
 
         db.close();
     }
 
 
-    /*
-        Students:  Here is where you will build code to test that we can insert and query the
-        database.  We've done a lot of work for you.  You'll want to look in TestUtilities
-        where you can use the "createWeatherValues" function.  You can
-        also make use of the validateCurrentRecord function from within TestUtilities.
-     */
+    // Testing an insertion and query to the database
     public void testMoviTable() {
-        // First insert the location, and then use the locationRowId to insert
-        // the weather. Make sure to cover as many failure cases as you can.
 
-        // Instead of rewriting all of the code we've already written in testLocationTable
-        // we can move this code to insertLocation and then call insertLocation from both
-        // tests. Why move it? We need the code to return the ID of the inserted location
-        // and our testLocationTable can only return void because it's a test.
-
-
-        // First step: Get reference to writable database
-        // If there's an error in those massive SQL table creation Strings,
-        // errors will be thrown here when you try to get a writable database.
         MovieDBHelper dbHelper = new MovieDBHelper(mContext);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
 
-        // Second Step (Weather): Create weather values
+        // Create movie values
         ContentValues movieValues = TestUtilities.createMovieValues();
 
-        // Third Step (Weather): Insert ContentValues into database and get a row ID back
+        // Insert ContentValues into database and get a row ID back
         long movieRowId = db.insert(MoviesContract.MovieEntry.TABLE_NAME, null, movieValues);
         assertTrue(movieRowId != -1);
 
-        // Fourth Step: Query the database and receive a Cursor back
-        // A cursor is your primary interface to the query results.
-        Cursor weatherCursor = db.query(
+        // Query the database and receive a Cursor back
+        Cursor movieCursor = db.query(
                 MoviesContract.MovieEntry.TABLE_NAME,  // Table to Query
-                null, // leaving "columns" null just returns all the columns.
-                null, // cols for "where" clause
-                null, // values for "where" clause
-                null, // columns to group by
-                null, // columns to filter by row groups
-                null  // sort order
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         );
 
         // Move the cursor to the first valid database row and check to see if we have any rows
-        assertTrue( "Error: No Records returned from location query", weatherCursor.moveToFirst() );
+        assertTrue( "Error: No Records returned from movie query", movieCursor.moveToFirst() );
 
-        // Fifth Step: Validate the location Query
-        TestUtilities.validateCurrentRecord("testInsertReadDb weatherEntry failed to validate",
-                weatherCursor, movieValues);
+        // Validate the  Query
+        TestUtilities.validateCurrentRecord("testInsertReadDb movieEntry failed to validate",
+                movieCursor, movieValues);
 
-        // Move the cursor to demonstrate that there is only one record in the database
-        assertFalse( "Error: More than one record returned from weather query",
-                weatherCursor.moveToNext() );
-
-        // Sixth Step: Close cursor and database
-        weatherCursor.close();
+        movieCursor.close();
         dbHelper.close();
     }
 

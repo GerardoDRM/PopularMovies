@@ -14,9 +14,8 @@ import java.util.Set;
 import app.gerardo.popularmovies.utils.PollingCheck;
 
 /*
-    Students: These are functions and some test data to make it easier to test your database and
-    Content Provider.  Note that you'll want your WeatherContract class to exactly match the one
-    in our solution to use these as-given.
+    This class is a support for testing the content provider
+    This test is based on Sunshine Project by Udacity
  */
 public class TestUtilities extends AndroidTestCase {
 
@@ -55,23 +54,6 @@ public class TestUtilities extends AndroidTestCase {
         valueCursor.close();
     }
 
-//    static final String TEST_LOCATION = "99705";
-//    static final long TEST_DATE = 1419033600L;  // December 20th, 2014
-//
-//    static void validateCursor(String error, Cursor valueCursor, ContentValues expectedValues) {
-//        assertTrue("Empty cursor returned. " + error, valueCursor.moveToFirst());
-//        validateCurrentRecord(error, valueCursor, expectedValues);
-//        valueCursor.close();
-//    }
-//
-//
-//    /*
-//        Students: The functions we provide inside of TestProvider use this utility class to test
-//        the ContentObserver callbacks using the PollingCheck class that we grabbed from the Android
-//        CTS tests.
-//        Note that this only tests that the onChange function is called; it does not test that the
-//        correct Uri is returned.
-//     */
     static class TestContentObserver extends ContentObserver {
         final HandlerThread mHT;
         boolean mContentChanged;
